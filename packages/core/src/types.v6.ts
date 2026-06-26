@@ -19,6 +19,7 @@ import {
   IsNever,
   MetaObject,
   NonReducibleUnknown,
+  OutputFrom,
   SingleOrArray,
   SnapshotEvent,
   StateValue,
@@ -85,6 +86,13 @@ type InternalEventDescriptorFor<TEvent extends EventObject> = [TEvent] extends [
 ]
   ? string
   : EventDescriptor<TEvent>;
+
+type InvokeDoneOutput<TActorMap extends Implementations['actors']> =
+  string extends keyof TActorMap
+    ? any
+    : [keyof TActorMap & string] extends [never]
+      ? any
+      : OutputFrom<TActorMap[keyof TActorMap & string]>;
 
 /**
  * Runtime options for state machine execution.
@@ -534,7 +542,7 @@ interface Next_InvokeConfigBase<
   // `onDone: ({ event }) => ({ context: { data: event.output } })`.
   onDone?: Next_TransitionConfigOrTarget<
     TContext,
-    DoneActorEvent<any>,
+    DoneActorEvent<InvokeDoneOutput<TActorMap>>,
     TEvent,
     TEmitted,
     TActionMap,

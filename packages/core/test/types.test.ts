@@ -2416,6 +2416,44 @@ describe('invoke', () => {
     });
   });
 
+  it('should strongly type registered invoke done event output with setup', () => {
+    const loadUser = createAsyncLogic({
+      schemas: {
+        input: types<{ userId: string }>(),
+        output: types<{ name: string }>()
+      },
+      run: async ({ input }) => {
+        return { name: input.userId };
+      }
+    });
+
+    setup({
+      actors: { loadUser }
+    }).createMachine({
+      initial: 'loading',
+      states: {
+        loading: {
+          invoke: {
+            src: 'loadUser',
+            input: { userId: '42' },
+            onDone: ({ event }) => {
+              const name: string = event.output.name;
+
+              // @ts-expect-error
+              const wrongName: number = event.output.name;
+
+              // @ts-expect-error
+              event.output.age;
+
+              noop(name);
+              noop(wrongName);
+            }
+          }
+        }
+      }
+    });
+  });
+
   it('should infer callback logic input from source schemas', () => {
     const logic = createCallbackLogic({
       schemas: {
